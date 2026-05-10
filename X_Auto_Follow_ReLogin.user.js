@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         X.com Auto Follow + Auto Re-Login
 // @namespace    http://tampermonkey.net/
-// @version      2.3.1
+// @version      2.3.2
 // @description  Automatically follow users when viewing their posts and auto re-login when forced logout occurs
 // @author       You
 // @match        https://x.com/*

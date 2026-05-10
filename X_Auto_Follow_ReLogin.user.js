@@ -32,9 +32,9 @@
 
         // Auto Re-Login Settings
         LOGIN: {
-            EMAIL_DOMAIN_STORAGE_KEY: 'x_auto_login_email_domain', // GM storage key for email domain
-            USERNAME_STORAGE_KEY: 'x_auto_login_username', // GM storage key for username
-            PASSWORD_STORAGE_KEY: 'x_auto_login_password', // GM storage key for password
+            EMAIL_DOMAIN_STORAGE_KEY: 'x_auto_login_email_domain',
+            USERNAME_STORAGE_KEY: 'x_auto_login_username',
+            PASSWORD_STORAGE_KEY: 'x_auto_login_password',
             MAX_RETRIES: 3,
             STEP_DELAY: 1500,
             ELEMENT_WAIT_TIMEOUT: 10000,
@@ -48,7 +48,7 @@
             PAGE_STATE_CHECK_DELAY: 1000
         },
 
-        // Selectors (with fallbacks)
+        // Selectors with fallbacks
         SELECTORS: {
             emailInput: [
                 'input[name="text"]',
@@ -86,11 +86,11 @@
             login: ['Log in', 'ログイン'],
             loginPrompt: ['Log in', 'ログイン', 'Sign in', 'サインイン'],
             accountNotFound: [
-                'accounts match', // "No accounts match that information"
-                'find your account', // "Sorry, we could not find your account"
+                'accounts match',
+                'find your account',
                 'アカウントが見つかりません',
-                '一致するアカウント', // "その情報に一致するアカウントはありません"
-                'incorrect', // "The password you entered is incorrect" (generic)
+                '一致するアカウント',
+                'incorrect'
             ]
         },
 
@@ -175,7 +175,7 @@
         },
 
         /**
-         * Find button by text content (supports multiple languages)
+         * Find button by text content
          */
         findButtonByText(textOptions, exactMatch = true) {
             const buttons = document.querySelectorAll('button[role="button"], button');
@@ -198,12 +198,12 @@
                 }
             }
 
-            Logger.debug('DOMUtils', `Button not found with texts:`, textOptions);
+            Logger.debug('DOMUtils', 'Button not found with texts:', textOptions);
             return null;
         },
 
         /**
-         * Fill input field with value (React-compatible)
+         * Fill input field with value
          */
         async fillInput(element, value) {
             if (!element) {
@@ -212,10 +212,8 @@
             }
 
             try {
-                // Focus the input
                 element.focus();
 
-                // Method 1: Use React's native setter if available
                 const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
                     window.HTMLInputElement.prototype,
                     'value'
@@ -227,22 +225,13 @@
                     element.value = value;
                 }
 
-                // Method 2: Trigger multiple events for React
-                // Input event (for controlled components)
                 element.dispatchEvent(new Event('input', { bubbles: true }));
-
-                // Change event (for form validation)
                 element.dispatchEvent(new Event('change', { bubbles: true }));
-
-                // Blur and focus to ensure validation
                 element.dispatchEvent(new Event('blur', { bubbles: true }));
                 element.dispatchEvent(new Event('focus', { bubbles: true }));
-
-                // KeyDown/KeyUp events (some forms check for these)
                 element.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
                 element.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
 
-                // Wait a bit for React to process
                 await this.wait(300);
 
                 Logger.debug('DOMUtils', `Filled input with value: ${value}`);
@@ -320,21 +309,18 @@
          * Check if user is logged in
          */
         isLoggedIn() {
-            // Check for login prompts
             const loginButtons = document.querySelectorAll('a[href="/login"], a[data-testid="loginButton"]');
             if (loginButtons.length > 0) {
                 Logger.debug('StateDetection', 'Login buttons found - user is logged out');
                 return false;
             }
 
-            // Check for login text in buttons
             const hasLoginPrompt = DOMUtils.findButtonByText(CONFIG.TEXT.loginPrompt, false);
             if (hasLoginPrompt) {
                 Logger.debug('StateDetection', 'Login prompt found - user is logged out');
                 return false;
             }
 
-            // Check if on login page
             if (this.isLoginPage()) {
                 Logger.debug('StateDetection', 'On login page - user is logged out');
                 return false;
@@ -490,32 +476,34 @@
 
             const title = document.createElement('h2');
             title.textContent = initialValues.title || 'X 自動ログイン設定';
-            // Alert user if this is a correction
+
             if (initialValues.title && initialValues.title.includes('見つかりません')) {
-                title.style.color = '#f4212e'; // Error red
+                title.style.color = '#f4212e';
             }
+
             card.appendChild(title);
 
-            // Username
             const userGroup = document.createElement('div');
             userGroup.className = 'input-group';
+
             const userLabel = document.createElement('label');
             userLabel.textContent = 'ユーザー名';
+
             const userInput = document.createElement('input');
             userInput.type = 'text';
             userInput.placeholder = '例: my_username';
             userInput.value = initialValues.username || '';
+
             userGroup.appendChild(userLabel);
             userGroup.appendChild(userInput);
             card.appendChild(userGroup);
 
-            // Email Domain (UX Improved)
             const emailGroup = document.createElement('div');
             emailGroup.className = 'input-group';
+
             const emailLabel = document.createElement('label');
             emailLabel.textContent = 'メールドメイン';
 
-            // Helper text instead of placeholder
             const emailHelper = document.createElement('div');
             emailHelper.className = 'helper-text';
             emailHelper.textContent = '例: gmail.com (@不要)';
@@ -525,31 +513,30 @@
             emailInput.value = initialValues.emailDomain || '';
 
             emailGroup.appendChild(emailLabel);
-            emailGroup.appendChild(emailHelper); // Helper text above input
+            emailGroup.appendChild(emailHelper);
             emailGroup.appendChild(emailInput);
             card.appendChild(emailGroup);
 
-            // Password
             const passGroup = document.createElement('div');
             passGroup.className = 'input-group';
+
             const passLabel = document.createElement('label');
             passLabel.textContent = 'パスワード';
+
             const passInput = document.createElement('input');
             passInput.type = 'password';
             passInput.placeholder = '******';
-            // Force empty password on re-entry/initial load as requested
             passInput.value = '';
+
             passGroup.appendChild(passLabel);
             passGroup.appendChild(passInput);
             card.appendChild(passGroup);
 
-            // Note
             const note = document.createElement('div');
             note.className = 'note';
             note.textContent = '※情報はTampermonkeyのストレージに保存されます';
             card.appendChild(note);
 
-            // Actions
             const actions = document.createElement('div');
             actions.className = 'actions';
 
@@ -580,15 +567,14 @@
         show(initialValues = {}) {
             return new Promise((resolve) => {
                 if (document.getElementById(this._id)) {
-                    return resolve(null); // Already checking
+                    return resolve(null);
                 }
 
                 this.initStyle();
+
                 const elements = this.create(initialValues);
                 document.body.appendChild(elements.overlay);
 
-                // Focus username initially, or email domain if username exists?
-                // Just focus username for consistency
                 setTimeout(() => elements.userInput.focus(), 100);
 
                 const cleanup = () => {
@@ -607,13 +593,11 @@
                         return;
                     }
 
-                    // Auto-fill default email domain if empty on save
                     if (!emailDomain) {
                         emailDomain = 'gmail.com';
                         Logger.info('AuthModal', 'Email domain empty, defaulting to gmail.com');
                     }
 
-                    // Normalize: Remove leading @ if present
                     if (emailDomain.startsWith('@')) {
                         emailDomain = emailDomain.substring(1);
                         Logger.info('AuthModal', 'Removed leading @ from email domain');
@@ -658,14 +642,13 @@
                     for (const button of buttons) {
                         const buttonText = button.textContent.trim();
 
-                        // Check for exact match with "Follow" or "フォロー"
                         if (CONFIG.TEXT.follow.includes(buttonText)) {
-                            // Make sure it's not "Following" or "フォロー中"
                             if (!CONFIG.TEXT.following.some(text => buttonText.includes(text))) {
                                 return button;
                             }
                         }
                     }
+
                     return null;
                 },
                 CONFIG.FOLLOW.BUTTON_SEARCH_ATTEMPTS,
@@ -683,7 +666,6 @@
             for (const button of buttons) {
                 const buttonText = button.textContent.trim();
 
-                // Check for "Following" or "フォロー中"
                 if (CONFIG.TEXT.following.some(text => buttonText === text || buttonText.includes(text))) {
                     return true;
                 }
@@ -707,6 +689,7 @@
             }
 
             const currentUrl = window.location.href;
+
             if (currentUrl === this.lastProcessedUrl) {
                 Logger.debug('AutoFollow', 'Already processed this URL, skipping...');
                 return;
@@ -723,13 +706,11 @@
             Logger.info('AutoFollow', 'Post detail page detected:', currentUrl);
 
             try {
-                // Check if already following
                 if (this.isAlreadyFollowing()) {
                     Logger.info('AutoFollow', 'Already following this account, no action needed');
                     return;
                 }
 
-                // Search for follow button
                 const followButton = await this.findFollowButton();
 
                 if (!followButton) {
@@ -739,7 +720,6 @@
 
                 Logger.info('AutoFollow', 'Found unfollowed user, attempting to follow...');
 
-                // Click the follow button
                 if (!await DOMUtils.clickElement(followButton, 'Follow button')) {
                     Logger.error('AutoFollow', 'Failed to click follow button');
                     return;
@@ -747,10 +727,8 @@
 
                 Logger.info('AutoFollow', 'Follow button clicked, waiting for confirmation...');
 
-                // Wait before rechecking
                 await DOMUtils.wait(CONFIG.FOLLOW.RECHECK_DELAY);
 
-                // Recheck follow status
                 Logger.info('AutoFollow', 'Rechecking follow status...');
 
                 if (this.isAlreadyFollowing()) {
@@ -758,14 +736,14 @@
                     return;
                 }
 
-                // If still not following, try again
                 const retryButton = await this.findFollowButton();
+
                 if (retryButton) {
                     Logger.info('AutoFollow', 'Still not following, attempting retry...');
+
                     if (await DOMUtils.clickElement(retryButton, 'Follow button (retry)')) {
                         Logger.info('AutoFollow', 'Retry follow button clicked');
 
-                        // Wait and check one more time
                         await DOMUtils.wait(CONFIG.FOLLOW.RECHECK_DELAY);
 
                         if (this.isAlreadyFollowing()) {
@@ -777,7 +755,6 @@
                 } else {
                     Logger.info('AutoFollow', '✓ Follow button no longer visible (likely followed successfully)');
                 }
-
             } catch (error) {
                 Logger.error('AutoFollow', 'Error during auto-follow:', error);
             } finally {
@@ -786,7 +763,7 @@
         },
 
         /**
-         * Reset state (for URL changes)
+         * Reset state
          */
         reset() {
             this.lastProcessedUrl = '';
@@ -818,14 +795,15 @@
             const creds = this.getCredentials();
 
             const isMissing = !creds.username || !creds.password;
+
             if (!isMissing && !reason) {
                 return creds;
             }
 
             Logger.info('AutoLogin', reason || 'Credentials missing or incomplete, prompting user...');
 
-            // Set modal title based on reason
             let modalTitle = 'X 自動ログイン設定';
+
             if (reason) {
                 if (reason === 'ACCOUNT_NOT_FOUND') {
                     modalTitle = 'アカウントが見つかりません: 情報を確認';
@@ -842,40 +820,39 @@
             const newCreds = await AuthModal.show(initialValues);
 
             if (newCreds) {
-                // Save provided credentials
                 this.setUsername(newCreds.username);
                 this.setPassword(newCreds.password);
                 this.setEmailDomain(newCreds.emailDomain);
+
                 Logger.info('AutoLogin', 'Credentials saved from modal.');
 
                 return newCreds;
-            } else {
-                Logger.warn('AutoLogin', 'Credential input cancelled by user.');
-                return null;
             }
+
+            Logger.warn('AutoLogin', 'Credential input cancelled by user.');
+            return null;
         },
 
         /**
-         * Get username from GM storage or window.name (fallback)
+         * Get username from GM storage or window.name
          */
         getUsername() {
-            // First try GM storage
             let username = GM_getValue(CONFIG.LOGIN.USERNAME_STORAGE_KEY, '');
 
-            // Fallback to window.name for backward compatibility
             if (!username) {
                 username = window.name;
-                // If found in window.name, save to GM storage for future use
+
                 if (username) {
                     this.setUsername(username);
                     Logger.info('AutoLogin', `Migrated username from window.name to GM storage: ${username}`);
                 }
             }
+
             return username;
         },
 
         /**
-         * Set username to GM storage (helper function)
+         * Set username to GM storage
          */
         setUsername(username) {
             GM_setValue(CONFIG.LOGIN.USERNAME_STORAGE_KEY, username);
@@ -887,21 +864,22 @@
          */
         getEmailDomain() {
             let domain = GM_getValue(CONFIG.LOGIN.EMAIL_DOMAIN_STORAGE_KEY, '');
-            // Normalize: Remove leading @ if present (compatibility)
+
             if (domain.startsWith('@')) {
                 domain = domain.substring(1);
             }
+
             return domain;
         },
 
         /**
-         * Set email domain to GM storage (helper function)
+         * Set email domain to GM storage
          */
         setEmailDomain(domain) {
-            // Normalize before saving
             if (domain.startsWith('@')) {
                 domain = domain.substring(1);
             }
+
             GM_setValue(CONFIG.LOGIN.EMAIL_DOMAIN_STORAGE_KEY, domain);
             Logger.info('AutoLogin', `Email domain saved to storage: ${domain}`);
         },
@@ -915,9 +893,9 @@
             const domain = this.getEmailDomain();
             if (!domain) return null;
 
-            // Add @ between username and domain
             const email = `${username}@${domain}`;
             Logger.info('AutoLogin', `Generated email: ${email}`);
+
             return email;
         },
 
@@ -929,7 +907,7 @@
         },
 
         /**
-         * Set password to GM storage (helper function)
+         * Set password to GM storage
          */
         setPassword(password) {
             GM_setValue(CONFIG.LOGIN.PASSWORD_STORAGE_KEY, password);
@@ -961,7 +939,9 @@
          * Detect general login errors
          */
         detectLoginError() {
-            const errorElements = document.querySelectorAll('[data-testid="toast"], [role="alert"], [data-testid="error-detail"]');
+            const errorElements = document.querySelectorAll(
+                '[data-testid="toast"], [role="alert"], [data-testid="error-detail"]'
+            );
 
             for (const el of errorElements) {
                 const text = el.textContent || '';
@@ -984,44 +964,47 @@
         async fillEmailAndNext() {
             Logger.info('AutoLogin', 'Step 1: Filling email...');
 
-            // Get username
             const username = this.getUsername();
             if (!username) throw new Error('Cannot proceed without username');
 
-            // Generate email
             const email = this.generateEmail(username);
             if (!email) throw new Error('Cannot proceed without email');
 
-            // Wait for email input
             const emailInput = await DOMUtils.waitForElement(CONFIG.SELECTORS.emailInput);
             if (!emailInput) throw new Error('Email input not found');
 
-            // Fill email
-            if (!await DOMUtils.fillInput(emailInput, email)) throw new Error('Failed to fill email');
+            if (!await DOMUtils.fillInput(emailInput, email)) {
+                throw new Error('Failed to fill email');
+            }
 
-            // Verify the value was set correctly
             await DOMUtils.wait(500);
+
             if (emailInput.value !== email) {
                 Logger.warn('AutoLogin', 'Email value mismatch, retrying...');
-                // Retry once
-                if (!await DOMUtils.fillInput(emailInput, email)) throw new Error('Failed to fill email on retry');
+
+                if (!await DOMUtils.fillInput(emailInput, email)) {
+                    throw new Error('Failed to fill email on retry');
+                }
             }
 
             Logger.info('AutoLogin', `Email filled and verified: ${email}`);
             Logger.info('AutoLogin', 'Waiting before clicking Next...');
+
             await DOMUtils.wait(CONFIG.LOGIN.STEP_DELAY);
 
-            // Click Next button
             const nextButton = DOMUtils.findButtonByText(CONFIG.TEXT.next);
             if (!nextButton) throw new Error('Next button not found');
 
-            if (!await DOMUtils.clickElement(nextButton, 'Next button')) throw new Error('Failed to click Next button');
+            if (!await DOMUtils.clickElement(nextButton, 'Next button')) {
+                throw new Error('Failed to click Next button');
+            }
 
             Logger.info('AutoLogin', '✓ Email step completed, checking for errors...');
-            await DOMUtils.wait(CONFIG.LOGIN.STEP_DELAY * 1.5); // Allow time for error to appear
 
-            // Check for explicit errors (e.g. Account not found)
+            await DOMUtils.wait(CONFIG.LOGIN.STEP_DELAY * 1.5);
+
             const error = this.detectLoginError();
+
             if (error === 'ACCOUNT_NOT_FOUND') {
                 throw new Error('ACCOUNT_NOT_FOUND');
             }
@@ -1030,16 +1013,15 @@
         },
 
         /**
-         * Handle additional authentication (username request)
+         * Handle additional authentication
          */
         async handleAdditionalAuth() {
             Logger.info('AutoLogin', 'Checking for additional authentication...');
 
-            // Wait a bit to see if additional auth appears
             await DOMUtils.wait(CONFIG.LOGIN.STEP_DELAY);
 
-            // Look for username input (additional auth screen)
             const additionalInput = document.querySelector('input[name="text"]');
+
             if (!additionalInput) {
                 Logger.info('AutoLogin', 'No additional authentication required');
                 return true;
@@ -1047,23 +1029,32 @@
 
             Logger.info('AutoLogin', 'Additional authentication detected, filling username...');
 
-            // Get username
             const username = this.getUsername();
-            if (!username) throw new Error('Cannot proceed without username for additional auth');
 
-            // Fill username
-            if (!await DOMUtils.fillInput(additionalInput, username)) throw new Error('Failed to fill username for additional auth');
+            if (!username) {
+                throw new Error('Cannot proceed without username for additional auth');
+            }
+
+            if (!await DOMUtils.fillInput(additionalInput, username)) {
+                throw new Error('Failed to fill username for additional auth');
+            }
 
             await DOMUtils.wait(CONFIG.LOGIN.STEP_DELAY);
 
-            // Click Next
             const nextButton = DOMUtils.findButtonByText(CONFIG.TEXT.next);
-            if (!nextButton) throw new Error('Next button not found for additional auth');
 
-            if (!await DOMUtils.clickElement(nextButton, 'Next button (additional auth)')) throw new Error('Failed to click Next button for additional auth');
+            if (!nextButton) {
+                throw new Error('Next button not found for additional auth');
+            }
+
+            if (!await DOMUtils.clickElement(nextButton, 'Next button (additional auth)')) {
+                throw new Error('Failed to click Next button for additional auth');
+            }
 
             Logger.info('AutoLogin', '✓ Additional authentication completed');
+
             await DOMUtils.wait(CONFIG.LOGIN.STEP_DELAY);
+
             return true;
         },
 
@@ -1073,28 +1064,40 @@
         async fillPasswordAndLogin() {
             Logger.info('AutoLogin', 'Step 2: Filling password...');
 
-            // Get password from storage
             const password = this.getPassword();
-            if (!password) throw new Error('Cannot proceed without password');
 
-            // Wait for password input
+            if (!password) {
+                throw new Error('Cannot proceed without password');
+            }
+
             const passwordInput = await DOMUtils.waitForElement(CONFIG.SELECTORS.passwordInput);
-            if (!passwordInput) throw new Error('Password input not found');
 
-            // Fill password
-            if (!await DOMUtils.fillInput(passwordInput, password)) throw new Error('Failed to fill password');
+            if (!passwordInput) {
+                throw new Error('Password input not found');
+            }
+
+            if (!await DOMUtils.fillInput(passwordInput, password)) {
+                throw new Error('Failed to fill password');
+            }
 
             Logger.info('AutoLogin', 'Password filled, waiting before clicking Login...');
+
             await DOMUtils.wait(CONFIG.LOGIN.STEP_DELAY);
 
-            // Click Login button
             const loginButton = DOMUtils.findButtonByText(CONFIG.TEXT.login);
-            if (!loginButton) throw new Error('Login button not found');
 
-            if (!await DOMUtils.clickElement(loginButton, 'Login button')) throw new Error('Failed to click Login button');
+            if (!loginButton) {
+                throw new Error('Login button not found');
+            }
+
+            if (!await DOMUtils.clickElement(loginButton, 'Login button')) {
+                throw new Error('Failed to click Login button');
+            }
 
             Logger.info('AutoLogin', '✓ Password step completed, waiting for login...');
+
             await DOMUtils.wait(CONFIG.LOGIN.STEP_DELAY * 2);
+
             return true;
         },
 
@@ -1104,10 +1107,8 @@
         async verifyLoginSuccess() {
             Logger.info('AutoLogin', 'Verifying login success...');
 
-            // Wait for page to settle
             await DOMUtils.wait(CONFIG.LOGIN.STEP_DELAY);
 
-            // Check if logged in
             if (StateDetection.isLoggedIn()) {
                 Logger.info('AutoLogin', '✓ Login successful!');
                 return true;
@@ -1131,53 +1132,47 @@
                 return false;
             }
 
-            // Check credentials first!
             const creds = await this.ensureCredentials();
+
             if (!creds) {
                 Logger.error('AutoLogin', 'Login aborted: Credentials missing.');
                 return false;
             }
 
-            // Check retries
-            // If this is a FRESH sequence (not internal retry), we check global attempts
             if (this.loginAttempts >= CONFIG.LOGIN.MAX_RETRIES) {
                 Logger.error('AutoLogin', `Max login attempts (${CONFIG.LOGIN.MAX_RETRIES}) reached`);
                 return false;
             }
 
             this.isLoggingIn = true;
-            this.loginAttempts++; // Increment attempt counter
+            this.loginAttempts++;
 
-            Logger.info('AutoLogin', `Starting login flow (attempt ${this.loginAttempts}/${CONFIG.LOGIN.MAX_RETRIES})...`);
+            Logger.info(
+                'AutoLogin',
+                `Starting login flow (attempt ${this.loginAttempts}/${CONFIG.LOGIN.MAX_RETRIES})...`
+            );
 
             try {
-                // Navigate to login if not already there
                 if (!StateDetection.isLoginPage()) {
                     if (!await this.navigateToLogin()) {
                         return false;
                     }
                 }
 
-                // Step 1: Fill email and click Next
-                await this.fillEmailAndNext(); // Error AccountNotFound thrown here
-
-                // Handle additional authentication if needed
+                await this.fillEmailAndNext();
                 await this.handleAdditionalAuth();
-
-                // Step 2: Fill password and login
                 await this.fillPasswordAndLogin();
 
-                // Verify login success
                 if (!await this.verifyLoginSuccess()) {
                     throw new Error('VERIFICATION_FAILED');
                 }
 
                 Logger.info('AutoLogin', '✓✓✓ Full login flow completed successfully! ✓✓✓');
-                this.loginAttempts = 0; // Reset on success
-                return true;
 
+                this.loginAttempts = 0;
+
+                return true;
             } catch (error) {
-                // Catch specific errors to show relevant modal
                 let retryReason = 'ログイン失敗: 再チェック';
                 let isCritical = false;
 
@@ -1187,39 +1182,34 @@
                     Logger.error('AutoLogin', 'Login failed: Account not found');
                 } else if (error.message === 'VERIFICATION_FAILED') {
                     retryReason = 'ログイン失敗: 再チェック';
-                    isCritical = true; // Still critical enough to show retry
+                    isCritical = true;
                     Logger.warn('AutoLogin', 'Login verification failed. Prompting for credential re-entry...');
                 } else {
                     Logger.error('AutoLogin', 'Error during login flow:', error);
-                    isCritical = false; // Other errors might be temporary
+                    isCritical = false;
                 }
 
                 if (isCritical) {
-                    // Temporarily release lock to show modal
                     this.isLoggingIn = false;
 
-                    // Show re-check modal
                     const updatedCreds = await this.ensureCredentials(retryReason);
 
                     if (updatedCreds) {
                         Logger.info('AutoLogin', 'Credentials updated, retrying login...');
-                        // Ensure one more retry is allowed
+
                         if (this.loginAttempts >= CONFIG.LOGIN.MAX_RETRIES) {
                             this.loginAttempts = CONFIG.LOGIN.MAX_RETRIES - 1;
                         }
 
                         return await this.executeLogin(true);
-                    } else {
-                        // User cancelled
-                        Logger.warn('AutoLogin', 'Login verification failed and user cancelled retry');
-                        return false;
                     }
+
+                    Logger.warn('AutoLogin', 'Login verification failed and user cancelled retry');
+                    return false;
                 }
 
                 return false;
-
             } finally {
-                // ensure lock is released if we are not recursing
                 if (!this.isLoggingIn) {
                     // already released
                 } else {
@@ -1234,9 +1224,9 @@
         async detectAndHandleLogout() {
             if (!StateDetection.isLoggedIn()) {
                 Logger.warn('AutoLogin', 'Logout detected! Initiating auto re-login...');
-                // executeLogin handles credential checking!
                 return await this.executeLogin();
             }
+
             return false;
         }
     };
@@ -1254,6 +1244,7 @@
          */
         async handleUrlChange() {
             clearTimeout(this.debounceTimer);
+
             this.debounceTimer = setTimeout(async () => {
                 await this.processCurrentPage();
             }, CONFIG.DETECTION.OBSERVER_DEBOUNCE);
@@ -1266,13 +1257,6 @@
             try {
                 const pageState = StateDetection.getCurrentPageState();
                 Logger.debug('Orchestrator', `Current page state: ${pageState}`);
-
-                // Check for /i/chat redirect
-                if (window.location.pathname === '/i/chat') {
-                    Logger.info('Orchestrator', 'Redirecting /i/chat to /messages...');
-                    window.location.href = 'https://x.com/messages';
-                    return;
-                }
 
                 switch (pageState) {
                     case 'LOGGED_OUT':
@@ -1295,14 +1279,22 @@
                         break;
                 }
 
-                this.consecutiveErrors = 0; // Reset on success
-
+                this.consecutiveErrors = 0;
             } catch (error) {
                 this.consecutiveErrors++;
-                Logger.error('Orchestrator', `Error processing page (${this.consecutiveErrors} consecutive):`, error);
+
+                Logger.error(
+                    'Orchestrator',
+                    `Error processing page (${this.consecutiveErrors} consecutive):`,
+                    error
+                );
 
                 if (this.consecutiveErrors >= CONFIG.FLAGS.SAFE_STOP_ERROR_THRESHOLD) {
-                    Logger.error('Orchestrator', `Safe stop triggered after ${this.consecutiveErrors} consecutive errors`);
+                    Logger.error(
+                        'Orchestrator',
+                        `Safe stop triggered after ${this.consecutiveErrors} consecutive errors`
+                    );
+
                     this.stop();
                 }
             }
@@ -1316,6 +1308,7 @@
 
             const observer = new MutationObserver(() => {
                 const currentUrl = location.href;
+
                 if (currentUrl !== this.lastUrl) {
                     this.lastUrl = currentUrl;
                     Logger.info('Orchestrator', 'URL changed:', currentUrl);
@@ -1337,7 +1330,6 @@
          */
         startLogoutMonitoring() {
             setInterval(async () => {
-                // Only check if we are not currently trying to log in
                 if (!StateDetection.isLoginPage() && !AutoLoginFeature.isLoggingIn) {
                     await AutoLoginFeature.detectAndHandleLogout();
                 }
@@ -1352,20 +1344,23 @@
         async init() {
             Logger.info('Orchestrator', '='.repeat(60));
             Logger.info('Orchestrator', 'X.com Auto-Follow + Auto Re-Login Script Initialized');
-            Logger.info('Orchestrator', `Version: 2.3`);
+            Logger.info('Orchestrator', 'Version: 2.3');
             Logger.info('Orchestrator', `Auto-Follow: ${CONFIG.FLAGS.ENABLE_AUTO_FOLLOW ? 'ENABLED' : 'DISABLED'}`);
             Logger.info('Orchestrator', `Auto-Login: ${CONFIG.FLAGS.ENABLE_AUTO_LOGIN ? 'ENABLED' : 'DISABLED'}`);
             Logger.info('Orchestrator', `Dry Run: ${CONFIG.FLAGS.DRY_RUN ? 'ENABLED' : 'DISABLED'}`);
 
-            // Check username availability
             const storedUsername = GM_getValue(CONFIG.LOGIN.USERNAME_STORAGE_KEY, '');
             const fallbackUsername = window.name;
             const username = storedUsername || fallbackUsername;
 
             if (username) {
                 Logger.info('Orchestrator', `Username: ${username}`);
+
                 if (!storedUsername && fallbackUsername) {
-                    Logger.info('Orchestrator', 'Note: Username found in window.name, will be migrated to GM storage on first use');
+                    Logger.info(
+                        'Orchestrator',
+                        'Note: Username found in window.name, will be migrated to GM storage on first use'
+                    );
                 }
             } else {
                 Logger.warn('Orchestrator', '⚠️ ユーザ名が設定されていません');
@@ -1373,11 +1368,9 @@
 
             Logger.info('Orchestrator', '='.repeat(60));
 
-            // Initial page processing
             await DOMUtils.wait(CONFIG.DETECTION.PAGE_STATE_CHECK_DELAY);
             await this.processCurrentPage();
 
-            // Start monitoring
             this.monitorUrlChanges();
             this.startLogoutMonitoring();
 
@@ -1389,22 +1382,21 @@
          */
         stop() {
             Logger.error('Orchestrator', 'Orchestrator stopped due to errors');
-            // Could implement cleanup here
         }
     };
 
     // ============================================================================
-    // GLOBAL HELPER FUNCTIONS (accessible from browser console)
+    // GLOBAL HELPER FUNCTIONS
     // ============================================================================
-
-    // Expose helper functions to unsafeWindow for easy access from console
-    // (Tampermonkey uses sandbox, so we need unsafeWindow to expose to page context)
     unsafeWindow.setXCredentials = function (username, password, emailDomain) {
         GM_setValue(CONFIG.LOGIN.USERNAME_STORAGE_KEY, username);
         GM_setValue(CONFIG.LOGIN.PASSWORD_STORAGE_KEY, password);
 
         let domain = emailDomain || 'gmail.com';
-        if (domain.startsWith('@')) domain = domain.substring(1);
+
+        if (domain.startsWith('@')) {
+            domain = domain.substring(1);
+        }
 
         GM_setValue(CONFIG.LOGIN.EMAIL_DOMAIN_STORAGE_KEY, domain);
 
@@ -1426,7 +1418,10 @@
     };
 
     unsafeWindow.setXEmailDomain = function (domain) {
-        if (domain && domain.startsWith('@')) domain = domain.substring(1);
+        if (domain && domain.startsWith('@')) {
+            domain = domain.substring(1);
+        }
+
         GM_setValue(CONFIG.LOGIN.EMAIL_DOMAIN_STORAGE_KEY, domain);
         console.log('✅ メールドメインを保存しました:', domain);
     };
@@ -1435,9 +1430,11 @@
         const username = GM_getValue(CONFIG.LOGIN.USERNAME_STORAGE_KEY, '');
         const password = GM_getValue(CONFIG.LOGIN.PASSWORD_STORAGE_KEY, '');
         const emailDomain = GM_getValue(CONFIG.LOGIN.EMAIL_DOMAIN_STORAGE_KEY, '');
+
         console.log('Username:', username || '(未設定)');
         console.log('Password:', password ? '***' + password.slice(-4) : '(未設定)');
         console.log('Email Domain:', emailDomain || '(未設定)');
+
         return { username, password, emailDomain };
     };
 
@@ -1445,6 +1442,7 @@
         GM_deleteValue(CONFIG.LOGIN.USERNAME_STORAGE_KEY);
         GM_deleteValue(CONFIG.LOGIN.PASSWORD_STORAGE_KEY);
         GM_deleteValue(CONFIG.LOGIN.EMAIL_DOMAIN_STORAGE_KEY);
+
         console.log('✅ 認証情報をすべて削除しました');
     };
 
@@ -1457,7 +1455,6 @@
         Orchestrator.init();
     }
 
-    // Show helper message on script load
     console.log('%c[X Auto-Follow+Login] ヘルパー関数が利用可能です', 'color: #1DA1F2; font-weight: bold');
     console.log('認証情報を設定: setXCredentials("username", "password")');
     console.log('確認: getXCredentials()');
